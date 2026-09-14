@@ -3,58 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>طقس الشرقاط المباشر</title>
-    <!-- مكتبة الخرائط التفاعلية Leaflet -->
+    <title>طقس الشرقاط والعراق</title>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
     <style>
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: Tahoma, sans-serif;
-            background-color: #0d1b2a;
-            color: #ffffff;
+            font-family: Tahoma, Arial, sans-serif;
+            background: #0d1b2a;
+            color: #fff;
             margin: 0;
             padding: 6px;
         }
         .container {
-            max-width: 480px;
+            max-width: 520px;
             margin: auto;
             background: #1b263b;
             padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.45);
+        }
+        .top-signature {
+            text-align: center;
+            font-size: 9px;
+            color: #ffb703;
+            margin-bottom: 4px;
+            font-weight: bold;
         }
         h2 {
             text-align: center;
             color: #48cae4;
-            font-size: 16px;
-            margin: 4px 0 8px 0;
+            font-size: 18px;
+            margin: 5px 0 4px;
         }
-        /* خريطة الأقمار الصناعية الحقيقية */
-        #map {
+        .subtitle {
+            text-align: center;
+            color: #adb5bd;
+            font-size: 10px;
+            margin-bottom: 9px;
+        }
+        .section-title {
+            color: #90e0ef;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 10px 2px 6px;
+        }
+        .map-wrap {
+            position: relative;
+            margin-bottom: 9px;
+        }
+        #map, #iraqMap {
             width: 100%;
-            height: 180px;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            height: 210px;
+            border-radius: 9px;
             border: 2px solid #0077b6;
+            overflow: hidden;
         }
-        /* شاشة الطقس الرئيسية المصغرة (مستطيل أفقي مدمج) */
+        #iraqMap { height: 310px; }
+        .map-badge {
+            position: absolute;
+            z-index: 500;
+            top: 8px;
+            right: 8px;
+            background: rgba(13,27,42,.88);
+            border: 1px solid #48cae4;
+            color: #fff;
+            border-radius: 20px;
+            padding: 5px 9px;
+            font-size: 10px;
+            pointer-events: none;
+        }
+        .satellite-status {
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+            margin-top: 6px;
+            font-size: 10px;
+            color: #cfe8ef;
+        }
+        .status-live {
+            color: #90e0ef;
+            font-weight: bold;
+        }
         .main-weather-card {
             background: linear-gradient(135deg, #415a77, #1b263b);
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 9px;
+            padding: 9px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
             border: 1px solid #778da9;
         }
-        .weather-left {
-            text-align: right;
-        }
-        .weather-right {
-            text-align: left;
-        }
+        .weather-left { text-align: right; }
+        .weather-right { text-align: left; }
         .temp-display {
-            font-size: 32px;
+            font-size: 34px;
             font-weight: bold;
             color: #90e0ef;
             line-height: 1;
@@ -62,7 +108,7 @@
         .condition-text {
             font-size: 11px;
             color: #e0fbfc;
-            margin-top: 2px;
+            margin-top: 3px;
         }
         .location-title {
             font-size: 11px;
@@ -71,9 +117,8 @@
         .time-box {
             font-size: 10px;
             color: #90e0ef;
-            margin-top: 2px;
+            margin-top: 3px;
         }
-        /* شاشات تفاصيل الطقس المصغرة (الرياح، الرطوبة، الأمطار) */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -82,10 +127,10 @@
         }
         .stat-box {
             background: #0d1b2a;
-            padding: 6px;
-            border-radius: 6px;
+            padding: 7px 4px;
+            border-radius: 7px;
             text-align: center;
-            font-size: 11px;
+            font-size: 10px;
             border: 1px solid #415a77;
         }
         .stat-box span {
@@ -93,9 +138,8 @@
             font-size: 12px;
             font-weight: bold;
             color: #90e0ef;
-            margin-top: 2px;
+            margin-top: 3px;
         }
-        /* شاشات أيام الأسبوع المصغرة */
         .weekly-forecast {
             display: flex;
             gap: 4px;
@@ -105,9 +149,9 @@
         }
         .day-card {
             background: #0d1b2a;
-            min-width: 58px;
+            min-width: 62px;
             padding: 6px 3px;
-            border-radius: 6px;
+            border-radius: 7px;
             text-align: center;
             font-size: 10px;
             border: 1px solid #415a77;
@@ -122,116 +166,323 @@
             font-weight: bold;
             margin-top: 2px;
         }
-        /* التوقيع الرسمي */
-        .signature {
-            text-align: center;
+        .satellite-card {
+            background: #0d1b2a;
+            border: 1px solid #415a77;
+            border-radius: 10px;
+            padding: 7px;
+            margin-top: 8px;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            margin-top: 7px;
+        }
+        .control-btn {
+            border: 1px solid #48cae4;
+            background: #16263b;
+            color: #fff;
+            border-radius: 7px;
+            padding: 7px 3px;
             font-size: 10px;
-            color: #ffb703;
-            margin-top: 6px;
-            border-top: 1px solid #415a77;
-            padding-top: 6px;
+            cursor: pointer;
+        }
+        .control-btn:active { transform: scale(.98); }
+        .info-box {
+            background: rgba(72,202,228,.08);
+            border: 1px solid rgba(72,202,228,.3);
+            border-radius: 7px;
+            padding: 7px;
+            margin-top: 7px;
+            font-size: 9px;
+            line-height: 1.7;
+            color: #d8eef3;
+        }
+        .bottom-nav {
+            position: sticky;
+            bottom: 5px;
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin: 10px 0 7px;
+        }
+        .nav-btn {
+            text-decoration: none;
+            text-align: center;
+            background: #0077b6;
+            color: #fff;
+            padding: 9px 5px;
+            border-radius: 8px;
+            font-size: 11px;
             font-weight: bold;
+            border: 1px solid #48cae4;
+        }
+        @media (min-width: 700px) {
+            .container { max-width: 900px; }
+            #map { height: 300px; }
+            #iraqMap { height: 500px; }
         }
     </style>
 </head>
+
 <body>
-
 <div class="container">
-    <h2>طقس قضاء الشرقاط والمناطق المجاورة</h2>
-    
-    <!-- الخريطة الحية للأقمار الصناعية -->
-    <div id="map"></div>
 
-    <!-- شاشة الطقس الرئيسية المعدلة (مستطيل مدمج) -->
+    <div class="top-signature">تصميم محمد علي احمد الحطاب الجبوري</div>
+    <h2>طقس قضاء الشرقاط والمناطق المجاورة</h2>
+    <div class="subtitle">بيانات الطقس تتحدث تلقائياً — وصور الأقمار الصناعية من EUMETSAT</div>
+
+    <div class="section-title">🛰️ الشرقاط من القمر الصناعي</div>
+    <div class="map-wrap">
+        <div id="map"></div>
+        <div class="map-badge">📍 الشرقاط</div>
+    </div>
+
+    <div class="satellite-status">
+        <span class="status-live">● تحديث تلقائي لصورة السماء</span>
+        <span id="satelliteTime">آخر تحديث: --</span>
+    </div>
+
     <div class="main-weather-card">
         <div class="weather-left">
             <div class="location-title">الشرقاط - الآن</div>
-            <div class="condition-text">صحو خالٍ من السحب (عبر الأقمار)</div>
+            <div class="condition-text" id="condition">جارٍ جلب حالة الطقس...</div>
             <div class="time-box" id="liveTime">التوقيت: --:--</div>
         </div>
         <div class="weather-right">
-            <div class="temp-display">39°C</div>
+            <div class="temp-display" id="temperature">--°C</div>
         </div>
     </div>
 
-    <!-- إحصائيات الرياح، الرطوبة، الأمطار -->
     <div class="stats-grid">
-        <div class="stat-box">
-            الأمطار <span>0%</span>
+        <div class="stat-box">الأمطار <span id="rain">--%</span></div>
+        <div class="stat-box">الرياح <span id="wind">-- كم/س</span></div>
+        <div class="stat-box">الرطوبة <span id="humidity">--%</span></div>
+    </div>
+
+    <div class="section-title">📅 توقعات الأيام القادمة</div>
+    <div class="weekly-forecast" id="weeklyForecast">
+        <div class="day-card">جاري التحميل...</div>
+    </div>
+
+    <div class="bottom-nav">
+        <a class="nav-btn" href="#weather">🌤️ الطقس</a>
+        <a class="nav-btn" href="#iraqSky">☁️ حركة السحب</a>
+    </div>
+
+    <div id="weather"></div>
+
+    <div id="iraqSky" class="section-title">☁️ سماء العراق — صورة الأقمار الصناعية</div>
+
+    <div class="satellite-card">
+        <div class="map-wrap">
+            <div id="iraqMap"></div>
+            <div class="map-badge">🇮🇶 العراق كاملًا</div>
         </div>
-        <div class="stat-box">
-            الرياح <span>12 كم/س</span>
+
+        <div class="satellite-status">
+            <span class="status-live">● الأقمار الصناعية — تحديث مستمر</span>
+            <span id="iraqSatelliteTime">--</span>
         </div>
-        <div class="stat-box">
-            الرطوبة <span>22%</span>
+
+        <div class="controls">
+            <button class="control-btn" onclick="refreshSatellite()">🔄 تحديث</button>
+            <button class="control-btn" id="playBtn" onclick="toggleSatelliteAnimation()">▶️ تشغيل السحب</button>
+            <button class="control-btn" onclick="toggleBaseMap()">🗺️ الخريطة</button>
+        </div>
+
+        <div style="margin-top:7px">
+            <input id="satelliteSlider" type="range" min="0" max="11" value="11"
+                   style="width:100%;accent-color:#48cae4"
+                   oninput="showSatelliteFrame(Number(this.value))">
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#adb5bd">
+                <span id="oldestFrame">--</span>
+                <span id="frameTime">--</span>
+                <span>الأحدث</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            🎞️ <b>حركة السحب:</b> يتم تحميل سلسلة من صور القمر الصناعي الأخيرة وتشغيلها بالتتابع مثل فيديو الطقس.
         </div>
     </div>
 
-    <!-- شاشات مصغرة لأيام الأسبوع -->
-    <div class="weekly-forecast">
-        <div class="day-card">
-            <div class="day-name">الاثنين</div>
-            <div>☀️</div>
-            <div class="day-temp">41°/23°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">الثلاثاء</div>
-            <div>☀️</div>
-            <div class="day-temp">40°/23°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">الأربعاء</div>
-            <div>⛅</div>
-            <div class="day-temp">39°/22°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">الخميس</div>
-            <div>☀️</div>
-            <div class="day-temp">41°/24°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">الجمعة</div>
-            <div>☀️</div>
-            <div class="day-temp">42°/24°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">السبت</div>
-            <div>⛅</div>
-            <div class="day-temp">40°/23°</div>
-        </div>
-        <div class="day-card">
-            <div class="day-name">الأحد</div>
-            <div>☀️</div>
-            <div class="day-temp">39°/22°</div>
-        </div>
-    </div>
-
-    <!-- التوقيع الرسمي المطلوب -->
-    <div class="signature">تصميم محمد علي احمد الحطاب الجبوري</div>
 </div>
 
-<!-- سكريبت الخرائط والتحديث المباشر -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    var map = L.map('map').setView([35.4542, 43.2583], 10);
+    const SHARQAT = [35.4542, 43.2583];
+    const map = L.map('map').setView(SHARQAT, 10);
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri',
-        maxZoom: 18
+        attribution: 'Tiles © Esri', maxZoom: 18
     }).addTo(map);
 
-    L.marker([35.4542, 43.2583]).addTo(map).bindPopup('<b>الشرقاط (المركز)</b><br>39°C - صحو').openPopup();
-    L.marker([35.3800, 43.2400]).addTo(map).bindPopup('<b>الزوية</b><br>39°C - مستقر');
-    L.marker([35.5200, 43.2000]).addTo(map).bindPopup('<b>الطالعة والقصبة</b><br>38°C - مشمس');
-    L.marker([35.3000, 43.2600]).addTo(map).bindPopup('<b>الخضرانية</b><br>39°C - صحو');
+    const eumetsatUrl = 'https://view.eumetsat.int/geoserver/wms';
+    let sharqatClouds = L.tileLayer.wms(eumetsatUrl, {
+        layers: 'mtg_fd:rgb_geocolour', format: 'image/png', transparent: true, version: '1.3.0', opacity: 0.72
+    }).addTo(map);
+
+    L.marker(SHARQAT).addTo(map).bindPopup('<b>الشرقاط (المركز)</b><br>موقع الطقس').openPopup();
+
+    const iraqMap = L.map('iraqMap', { zoomControl: true });
+    const esriIraq = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles © Esri', maxZoom: 10
+    }).addTo(iraqMap);
+
+    iraqMap.fitBounds([[29.0, 38.5], [37.5, 49.0]], { padding: [8, 8] });
+
+    let iraqClouds = L.tileLayer.wms(eumetsatUrl, {
+        layers: 'mtg_fd:rgb_geocolour', format: 'image/png', transparent: true, version: '1.3.0', opacity: 0.78
+    }).addTo(iraqMap);
+
+    let satelliteFrames = [];
+    let currentFrame = 11;
+    let animationTimer = null;
+    let animationPlaying = false;
+
+    function pad2(n) { return String(n).padStart(2, '0'); }
+
+    function buildSatelliteFrames() {
+        const now = new Date();
+        const anchor = new Date(now.getTime() - 30 * 60 * 1000);
+        satelliteFrames = [];
+        for (let i = 11; i >= 0; i--) {
+            satelliteFrames.push(new Date(anchor.getTime() - i * 10 * 60 * 1000));
+        }
+        currentFrame = satelliteFrames.length - 1;
+        const slider = document.getElementById('satelliteSlider');
+        slider.max = String(satelliteFrames.length - 1);
+        slider.value = String(currentFrame);
+        document.getElementById('oldestFrame').textContent = formatBaghdadTime(satelliteFrames[0]);
+        showSatelliteFrame(currentFrame);
+    }
+
+    function formatBaghdadTime(date) {
+        return new Intl.DateTimeFormat('ar-IQ', { timeZone: 'Asia/Baghdad', hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
+    }
+
+    function formatUtcIso(date) {
+        return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}T${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:00.000Z`;
+    }
+
+    function showSatelliteFrame(index) {
+        if (!satelliteFrames.length) return;
+        currentFrame = Math.max(0, Math.min(index, satelliteFrames.length - 1));
+        if (sharqatClouds) map.removeLayer(sharqatClouds);
+        if (iraqClouds) iraqMap.removeLayer(iraqClouds);
+
+        const frameDate = satelliteFrames[currentFrame];
+        sharqatClouds = L.tileLayer.wms(eumetsatUrl, { layers: 'mtg_fd:rgb_geocolour', format: 'image/png', transparent: true, version: '1.3.0', time: formatUtcIso(frameDate), opacity: 0.72 }).addTo(map);
+        iraqClouds = L.tileLayer.wms(eumetsatUrl, { layers: 'mtg_fd:rgb_geocolour', format: 'image/png', transparent: true, version: '1.3.0', time: formatUtcIso(frameDate), opacity: 0.80 }).addTo(iraqMap);
+
+        document.getElementById('satelliteSlider').value = String(currentFrame);
+        const shown = formatBaghdadTime(frameDate);
+        document.getElementById('frameTime').textContent = shown;
+        document.getElementById('satelliteTime').textContent = 'المشهد: ' + shown;
+        document.getElementById('iraqSatelliteTime').textContent = 'المشهد: ' + shown;
+    }
+
+    function toggleSatelliteAnimation() {
+        const btn = document.getElementById('playBtn');
+        if (animationPlaying) {
+            clearInterval(animationTimer);
+            animationTimer = null;
+            animationPlaying = false;
+            btn.textContent = '▶️ تشغيل السحب';
+            return;
+        }
+        animationPlaying = true;
+        btn.textContent = '⏸️ إيقاف السحب';
+        animationTimer = setInterval(() => {
+            currentFrame = (currentFrame + 1) >= satelliteFrames.length ? 0 : currentFrame + 1;
+            showSatelliteFrame(currentFrame);
+        }, 850);
+    }
+
+    function refreshSatellite() {
+        buildSatelliteFrames();
+        if (animationPlaying) {
+            clearInterval(animationTimer);
+            animationTimer = null;
+            animationPlaying = false;
+            document.getElementById('playBtn').textContent = '▶️ تشغيل السحب';
+        }
+    }
+
+    function toggleBaseMap() {
+        if (iraqMap.hasLayer(esriIraq)) iraqMap.removeLayer(esriIraq);
+        else iraqIraq.addTo(iraqMap);
+    }
+
+    buildSatelliteFrames();
+    setInterval(buildSatelliteFrames, 10 * 60 * 1000);
 
     function updateLiveTime() {
-        let now = new Date();
-        document.getElementById('liveTime').innerText = "التوقيت: " + now.toLocaleTimeString('ar-IQ');
+        const now = new Date();
+        document.getElementById('liveTime').innerText = 'توقيت بغداد: ' + new Intl.DateTimeFormat('ar-IQ', { timeZone: 'Asia/Baghdad', hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }).format(now);
     }
     updateLiveTime();
     setInterval(updateLiveTime, 1000);
-</script>
 
+    const weatherUrl = 'https://api.open-meteo.com/v1/forecast?latitude=35.4542&longitude=43.2583&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,cloud_cover&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FBaghdad&forecast_days=7';
+
+    function weatherText(code) {
+        const c = Number(code);
+        if (c === 0) return 'صحو والسماء صافية';
+        if (c === 1) return 'غالباً صافٍ';
+        if (c === 2) return 'غائم جزئياً';
+        if (c === 3) return 'غائم';
+        if ([51, 53, 55, 61, 63, 65].includes(c)) return 'أمطار';
+        return 'حالة جوية مستقرة';
+    }
+
+    function weatherIcon(code) {
+        const c = Number(code);
+        if (c === 0) return '☀️';
+        if ([1, 2].includes(c)) return '🌤️';
+        if (c === 3) return '☁️';
+        if ([51, 53, 55, 61, 63, 65].includes(c)) return '🌧️';
+        return '🌥️';
+    }
+
+    function arabicDay(dateString) {
+        const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+        return days[new Date(dateString + 'T12:00:00').getDay()];
+    }
+
+    async function loadWeather() {
+        try {
+            const res = await fetch(weatherUrl, { cache: 'no-store' });
+            const data = await res.json();
+            const cur = data.current;
+            document.getElementById('temperature').textContent = Math.round(cur.temperature_2m) + '°C';
+            document.getElementById('humidity').textContent = Math.round(cur.relative_humidity_2m) + '%';
+            document.getElementById('wind').textContent = Math.round(cur.wind_speed_10m) + ' كم/س';
+            document.getElementById('rain').textContent = Math.round(data.daily.precipitation_probability_max[0]) + '%';
+            document.getElementById('condition').textContent = weatherText(cur.weather_code) + ' — غطاء سحابي ' + Math.round(cur.cloud_cover) + '%';
+
+            const forecast = document.getElementById('weeklyForecast');
+            forecast.innerHTML = '';
+            for (let i = 0; i < data.daily.time.length; i++) {
+                const card = document.createElement('div');
+                card.className = 'day-card';
+                card.innerHTML = `
+                    <div class="day-name">${arabicDay(data.daily.time[i])}</div>
+                    <div>${weatherIcon(data.daily.weather_code[i])}</div>
+                    <div class="day-temp">${Math.round(data.daily.temperature_2m_max[i])}°/${Math.round(data.daily.temperature_2m_min[i])}°</div>
+                    <div style="color:#90e0ef;margin-top:2px">${Math.round(data.daily.precipitation_probability_max[i])}%</div>
+                `;
+                forecast.appendChild(card);
+            }
+        } catch (e) {
+            document.getElementById('condition').textContent = 'تعذر تحديث الطقس حالياً';
+        }
+    }
+    loadWeather();
+    setInterval(loadWeather, 10 * 60 * 1000);
+</script>
 </body>
 </html>
